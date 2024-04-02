@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html>
+<!--
+   This web page sets up a canvas for drawing with mouse events and 2D graphics.
+-->
+<head>
+    <meta charset="UTF-8">
+    <title>CS424, Lab 2, Exercise 2</title>
+    <style>
+        /* Styles for canvas and page appearance */
+        body {
+            background-color: #DDDDDD;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            -o-user-select: none;
+            user-select: none;
+        }
+        canvas {
+            background-color: white;
+            display: block;
+        }
+        #canvasholder {
+            border: 2px solid black;
+            float: left;
+        }
+    </style>
+    <script>
+        "use strict";
+
+        var canvas;
+        var graphics;
+
+        function installMouseHandler() {
+            var dragging = false;
+            var startX, startY;
+            var prevX, prevY;
+            var colorChoice;
+            var shapeChoice;
+
+            function doMouseDown(evt) {
+                if (dragging) {
+                    return;
+                }
+                if (evt.button !== 0) {
+                    return;
+                }
+                var x, y;
+                var rect = canvas.getBoundingClientRect();
+                x = Math.round(evt.clientX - rect.left);
+                y = Math.round(evt.clientY - rect.top);
+                dragging = true;
+                if (dragging) {
+                    startX = prevX = x;
+                    startY = prevY = y;
+                    document.addEventListener("mousemove", doMouseMove, false);
+                    document.addEventListener("mouseup", doMouseUp, false);
+                }
+                colorChoice = Number(document.getElementById("colorChoice").value);
+                shapeChoice = Number(document.getElementById("shapeChoice").value);
+            }
+
+            function doMouseMove(evt) {
+                if (!dragging) {
+                    return;
+                }
+                var x, y;
+                var rect = canvas.getBoundingClientRect();
+                x = Math.round(evt.clientX - rect.left);
+                y = Math.round(evt.clientY - rect.top);
+
+                if (shapeChoice === 0) {
+                    // Draw a square
+                    graphics.fillRect(x - 20, y - 20, 40, 40);
+                    graphics.strokeRect(x - 20, y - 20, 40, 40);
+                } else if (shapeChoice === 1) {
+                    // Draw a hexagon
+                    const a = 2 * Math.PI / 10;
+                    const r = 50;
+                    graphics.beginPath();
+                    for (var i = 0; i < 10; i++) {
+                        graphics.lineTo(x + r * Math.cos(a * i), y + r * Math.sin(a * i));
+                    }
+                    graphics.fill();
+                    graphics.closePath();
+                    graphics.stroke();
+                }
+
+                if (Math.abs(x - prevX) + Math.abs(y - prevY) < 3) {
+                    return;
+                }
+
+                if (colorChoice === 0) {
+                    graphics.fillStyle = "red";
+                } else if (colorChoice === 1) {
+                    graphics.fillStyle = "green";
+                }
+
+                prevX = x;
+                prevY = y;
+            }
+
+            function doMouseUp() {
+                if (!dragging) {
+                    return;
+                }
+                dragging = false;
+                document.removeEventListener("mousemove", doMouseMove, false);
+                document.removeEventListener("mouseup", doMouseMove, false);
+            }
+
+            canvas.addEventListener("mousedown", doMouseDown, false);
+        }
+
+        function addGraphicsContextExtras(graphics) {
+            // Additional drawing functions could be added here in the future
+        }
+
+        function init() {
+            try {
+                canvas = document.getElementById("canvas");
+                graphics = canvas.getContext("2d");
+            } catch (e) {
+                document.getElementById("canvasholder").innerHTML =
+                    "<p>Canvas graphics is not supported.<br>" +
+                    "An error occurred while initializing graphics.</p>";
+                return;
+            }
+            addGraphicsContextExtras(graphics);
+            installMouseHandler();
+            graphics.fillStyle = "white";
+            graphics.fillRect(0, 0, canvas.width, canvas.height);
+        }
+
+        function Clear_area() {
+            // Clear the canvas
+            graphics.clearRect(0, 0, 800, 600);
+        }
+    </script>
+</head>
+<body onload="init()">
+
+<h2>Lab 2, Exercise 2</h2>
+
+<noscript>
+    <p>JavaScript is required to use this page.</p>
+</noscript>
+
+<p><b>Color:</b>
+    <select id="colorChoice">
+        <option value="0">Red</option>
+        <option value="1">Green</option>
+    </select>
+    <button onclick="Clear_area()">Clear area</button>
+    <b>Shape:</b>
+    <select id="shapeChoice">
+        <option value="0">Square</option>
+        <option value="1">Hexagon</option>
+    </select>
+</p>
+
+<div id="canvasholder">
+    <canvas id="canvas" width="800" height="600">
+        Canvas not supported.
+    </canvas>
+</div>
+
+</body>
+</html>

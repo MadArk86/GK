@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html><head>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+<meta charset="UTF-8">
+<title> Lab 1, Exercise 1</title>
+<style>
+    
+    body {
+        background-color: #DDDDDD;
+    }
+    
+    canvas {
+        background-color: white;
+        display: block;
+    }
+    #canvasholder {
+        border:2px solid black;
+        float: left; /* This makes the border exactly fit the canvas. */
+    }
+    
+</style>
+<script>
+
+    "use strict"; 
+
+    var canvas;    
+    var graphics; 
+    var pixelSize;
+    
+    function draw() {
+        graphics.lineWidth="5";
+        graphics.fillStyle="rgb(253, 0, 5)";
+
+        graphics.fillPoly(100,200,500,200,500,350,100,350);
+        graphics.fillPoly(220,500,220,70,370,70,370,500);   
+       
+        graphics.strokeLine(220,350,97,350);
+        graphics.strokeLine(370,350,503,350);
+        graphics.strokeLine(97,200,220,200);
+        graphics.strokeLine(503,200,370,200);
+        graphics.strokeLine(100,350,100,200);
+        graphics.strokeLine(500,200,500,350);
+              
+        graphics.strokeLine(220,203,220,70);
+        graphics.strokeLine(220,347,220,500);
+        graphics.strokeLine(370,203,370,70);
+        graphics.strokeLine(370,347,370,500);
+        graphics.strokeLine(220,73,373,73);
+        graphics.strokeLine(373,500,217,500);
+       
+        
+       
+        graphics.fillStyle="rgb(255,255,255)";
+        graphics.fillCircle(250,250,20);
+        graphics.fillCircle(350,250,20);
+        graphics.fillStyle="rgb(0,0,0)";
+        graphics.fillCircle(250,250,12);
+        graphics.fillCircle(350,250,12);
+        graphics.fillStyle="rgb(255,255,255)";
+        graphics.fillCircle(247,247,3);
+        graphics.fillCircle(347,247,3);
+
+        graphics.fillStyle="rgb(0,0,0)";
+        graphics.fillOval(300,320,34,40);
+        graphics.fillStyle="rgb(253, 0, 5)";
+        graphics.fillOval(300,310,50,30);
+
+        graphics.fillStyle="rgb(255,255,255)";
+        graphics.fillPoly(290,339,290,347,310,347,310,340);
+       
+        graphics.lineWidth="2"; 
+        graphics.strokeLine(300,340,300,350)
+
+        
+        
+    } // end of draw()
+    
+ 
+    function applyWindowToViewportTransformation(left,right,bottom,top,preserveAspect) {
+        var displayAspect, windowAspect;
+        var excess;
+        var pixelwidth, pixelheight;
+        if (preserveAspect) {
+            // Adjust the limits to match the aspect ratio of the drawing area.
+            displayAspect = Math.abs(canvas.height / canvas.width);
+            windowAspect = Math.abs(( top-bottom ) / ( right-left ));
+            if (displayAspect > windowAspect) {
+                // Expand the viewport vertically.
+                excess = (top-bottom) * (displayAspect/windowAspect - 1);
+                top = top + excess/2;
+                bottom = bottom - excess/2;
+            }
+            else if (displayAspect < windowAspect) {
+                // Expand the viewport vertically.
+                excess = (right-left) * (windowAspect/displayAspect - 1);
+                right = right + excess/2;
+                left = left - excess/2;
+            }
+        }
+        graphics.scale( canvas.width / (right-left), canvas.height / (bottom-top) );
+        graphics.translate( -left, -top );
+        pixelwidth =  Math.abs(( right - left ) / canvas.width);
+        pixelheight = Math.abs(( bottom - top ) / canvas.height);
+        pixelSize = Math.max(pixelwidth,pixelheight);
+    }  
+
+    function addGraphicsContextExtras(graphics) {
+        graphics.strokeLine = function(x1,y1,x2,y2) {
+           this.beginPath();
+           this.moveTo(x1,y1);
+           this.lineTo(x2,y2);
+           this.stroke();
+        }
+        graphics.fillCircle = function(x,y,r) {
+           this.beginPath();
+           this.arc(x,y,r,0,2*Math.PI,false);
+           this.fill();
+        }
+        graphics.strokeCircle = function(x,y,radius) {
+           this.beginPath();
+           this.arc(x,y,radius,0,2*Math.PI,false);
+           this.stroke();
+        }
+        graphics.fillPoly = function() { 
+            if (arguments.length < 6)
+               return;
+            this.beginPath();
+            this.moveTo(arguments[0],arguments[1]);
+            for (var i = 2; i+1 < arguments.length; i = i + 2) { 
+               this.lineTo(arguments[i],arguments[i+1]);
+            }
+            this.closePath();
+            this.fill();
+        }
+        graphics.strokePoly = function() { 
+            if (arguments.length < 4)
+               return;
+            this.beginPath();
+            this.moveTo(arguments[0],arguments[1]);
+            for (var i = 2; i+1 < arguments.length; i = i + 2) { 
+               this.lineTo(arguments[i],arguments[i+1]);
+            }
+            this.closePath();
+            this.stroke();
+        }
+        graphics.fillOval = function(x,y,horizontalRadius,verticalRadius) {
+           this.save();
+           this.translate(x,y);
+           this.scale(horizontalRadius,verticalRadius);
+           this.beginPath();
+           this.arc(0,0,1,0,2*Math.PI,false);
+           this.restore();
+           this.fill();
+        }
+        graphics.strokeOval = function(x,y,horizontalRadius,verticalRadius) {
+           this.save();
+           this.translate(x,y);
+           this.scale(horizontalRadius,verticalRadius);
+           this.beginPath();
+           this.arc(0,0,1,0,2*Math.PI,false);
+           this.restore();
+           this.stroke();
+        }
+        graphics.getRGB = function(x,y) {
+            var color = this.getImageData(x,y,1,1);
+            return color.data;
+        }
+    }   
+    function init() {
+        try {
+            canvas = document.getElementById("canvas");
+            graphics = canvas.getContext("2d");
+        } catch(e) {
+            document.getElementById("canvasholder").innerHTML =
+               "Canvas graphics is not supported.<br>" +
+               "An error occurred while initializing graphics.";
+        }
+        addGraphicsContextExtras(graphics);
+        draw();  // Call draw() to draw on the canvas.
+    }
+    
+</script>
+<link href="data:text/css,%3Ais(%5Bid*%3D'google_ads_iframe'%5D%2C%5Bid*%3D'taboola-'%5D%2C.taboolaHeight%2C.taboola-placeholder%2C%23credential_picker_container%2C%23credentials-picker-container%2C%23credential_picker_iframe%2C%5Bid*%3D'google-one-tap-iframe'%5D%2C%23google-one-tap-popup-container%2C.google-one-tap-modal-div%2C%23amp_floatingAdDiv%2C%23ez-content-blocker-container)%20%7Bdisplay%3Anone!important%3Bmin-height%3A0!important%3Bheight%3A0!important%3B%7D" rel="stylesheet" type="text/css"></head>
+<body onload="init()"> <!-- the onload attribute here is what calls the init() function -->
+
+<h2>Lab 2, Exercise 1</h2>
+
+<noscript>
+    <!-- This message will be shown in the page if JavaScript is not available. -->
+<p>JavaScript is required to use this page.</p>
+</noscript>
+
+<div id="canvasholder">
+<canvas id="canvas" width="600" height="600">
+    <!-- This message is shown on the page if the browser doesn't support the canvas element. -->
+Canvas not supported.
+</canvas>
+</div>
+
+
+
+<script>mendeleyWebImporter = {
+  downloadPdfs(e,t) { return this._call('downloadPdfs', [e,t]); },
+  open() { return this._call('open', []); },
+  setLoginToken(e) { return this._call('setLoginToken', [e]); },
+  _call(methodName, methodArgs) {
+    const id = Math.random();
+    window.postMessage({ id, token: '0.7410837702584282', methodName, methodArgs }, 'https://e-uczelnia.ath.bielsko.pl');
+    return new Promise(resolve => {
+      const listener = window.addEventListener('message', event => {
+        const data = event.data;
+        if (typeof data !== 'object' || !('result' in data) || data.id !== id) return;
+        window.removeEventListener('message', listener);
+        resolve(data.result);
+      });
+    });
+  }
+};</script></body></html>
