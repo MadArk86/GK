@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rotating Shapes</title>
+    <style>
+        canvas {
+            border: 1px solid black;
+        }
+    </style>
+</head>
+<body>
+<canvas id="myCanvas" width="900" height="600"></canvas>
+<script>
+    class Polygon {
+        constructor(centerX, centerY, radius, sides) {
+            this.centerX = centerX;
+            this.centerY = centerY;
+            this.radius = radius;
+            this.sides = sides;
+        }
+
+        draw(ctx, angle) {
+            ctx.beginPath();
+            ctx.moveTo(this.centerX + this.radius * Math.cos(angle), this.centerY + this.radius * Math.sin(angle));
+
+            for (let i = 1; i <= this.sides; i++) {
+                angle += (2 * Math.PI) / this.sides;
+                const x = this.centerX + this.radius * Math.cos(angle);
+                const y = this.centerY + this.radius * Math.sin(angle);
+                ctx.lineTo(x, y);
+                ctx.moveTo(this.centerX, this.centerY);
+                ctx.lineTo(x, y);
+            }
+
+            ctx.closePath();
+            ctx.strokeStyle = "#000";
+            ctx.stroke();
+        }
+    }
+
+    class RotatedRectangle {
+        constructor(x, y, width, height, rotationAngle, color) {
+            this.x = x;
+            this.y = y;
+            this.width = width;
+            this.height = height;
+            this.rotationAngle = rotationAngle;
+            this.color = color;
+        }
+
+        draw(ctx) {
+            ctx.save();
+            ctx.translate(this.x, this.y);
+            ctx.rotate(this.rotationAngle * Math.PI / 180);
+            ctx.fillStyle = this.color;
+            ctx.fillRect(-this.width / 2, -this.height / 2, this.width, this.height);
+            ctx.restore();
+        }
+    }
+
+    class Triangle {
+        constructor(x, y, size, color) {
+            this.x = x;
+            this.y = y;
+            this.size = size;
+            this.color = color;
+        }
+
+        draw(ctx) {
+            const x1 = this.x - this.size / 2;
+            const y1 = this.y + this.size / Math.sqrt(3);
+            const x2 = this.x + this.size / 2;
+            const y2 = this.y + this.size / Math.sqrt(3);
+            const x3 = this.x;
+            const y3 = this.y - (2 * this.size) / Math.sqrt(3);
+
+            ctx.fillStyle = this.color;
+
+            ctx.beginPath();
+            ctx.moveTo(x1, y1);
+            ctx.lineTo(x2, y2);
+            ctx.lineTo(x3, y3);
+            ctx.closePath();
+            ctx.fill();
+        }
+    }
+
+    class Animation {
+        constructor(ctx, figures) {
+            this.ctx = ctx;
+            this.figures = figures;
+            this.angle = 0;
+        }
+
+        animate() {
+            this.ctx.clearRect(0, 0, canvas.width, canvas.height);
+            this.angle += Math.PI / 180;
+            this.figures.forEach(figure => figure.draw(this.ctx, this.angle));
+            requestAnimationFrame(() => this.animate());
+        }
+    }
+
+    const canvas = document.getElementById('myCanvas');
+    const ctx = canvas.getContext('2d');
+
+    const figures = [
+        new Polygon(60, 132, 40, 4),
+        new Polygon(272, 190, 40, 4),
+        new RotatedRectangle(167, 160, 230, 15, 15, "red"),
+        new Triangle(160, 235, 60, "purple"),
+        new Polygon(480, 112, 32, 4),
+        new Polygon(652, 161, 32, 4),
+        new RotatedRectangle(567, 136, 184, 15, 15, "red"),
+        new Triangle(560, 195, 48, "green"),
+        new Polygon(223, 402, 52, 4),
+        new Polygon(510, 479, 52, 4),
+        new RotatedRectangle(367, 440, 299, 15, 15, "red"),
+        new Triangle(360, 535, 78, "blue")
+    ];
+
+    const animation = new Animation(ctx, figures);
+    animation.animate();
+</script>
+</body>
+</html>

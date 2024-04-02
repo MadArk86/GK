@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rotating Shapes</title>
+    <style>
+        canvas {
+            border: 1px solid black;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="myCanvas" width="900" height="600"></canvas>
+    <script>
+        const canvas = document.getElementById('myCanvas');
+        const ctx = canvas.getContext('2d');
+
+        let angle = 0;
+
+        function drawPolygon(centerX, centerY, radius, sides) {
+            ctx.beginPath();
+            ctx.moveTo(centerX + radius * Math.cos(angle), centerY + radius * Math.sin(angle));
+
+            for (let i = 1; i <= sides; i++) {
+                angle += (2 * Math.PI) / sides;
+                const x = centerX + radius * Math.cos(angle);
+                const y = centerY + radius * Math.sin(angle);
+                ctx.lineTo(x, y);
+                ctx.moveTo(centerX, centerY);
+                ctx.lineTo(x, y);
+            }
+
+            ctx.closePath();
+            ctx.strokeStyle = "#000";
+            ctx.stroke();
+        }
+
+        function drawRotatedRectangle(x, y, width, height, rotationAngle, color) {
+            ctx.save();
+            ctx.translate(x, y);
+            ctx.rotate(rotationAngle * Math.PI / 180);
+            ctx.fillStyle = color;
+            ctx.fillRect(-width / 2, -height / 2, width, height);
+            ctx.restore();
+        }
+
+        function drawTriangle(x, y, size, color) {
+            const x1 = x - size / 2;
+            const y1 = y + size / Math.sqrt(3);
+            const x2 = x + size / 2;
+            const y2 = y + size / Math.sqrt(3);
+            const x3 = x;
+            const y3 = y - (2 * size) / Math.sqrt(3);
+
+            ctx.fillStyle = color;
+
+            ctx.beginPath();
+            ctx.moveTo(x1, y1);
+            ctx.lineTo(x2, y2);
+            ctx.lineTo(x3, y3);
+            ctx.closePath();
+            ctx.fill();
+        }
+
+        function animate() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            angle += Math.PI / 180;
+            drawPolygon(60, 132, 40, 4);
+            drawPolygon(272, 190, 40, 4);
+            drawRotatedRectangle(167, 160, 230, 15, 15, "red");
+            drawTriangle(160, 235, 60, "purple");
+
+            drawPolygon(480, 112, 32, 4);
+            drawPolygon(652, 161, 32, 4);
+            drawRotatedRectangle(567, 136, 184, 15, 15, "red");
+            drawTriangle(560, 195, 48, "green");
+
+            drawPolygon(223, 402, 52, 4);
+            drawPolygon(510, 479, 52, 4);
+            drawRotatedRectangle(367, 440, 299, 15, 15, "red");
+            drawTriangle(360, 535, 78, "blue");
+
+            requestAnimationFrame(animate);
+        }
+
+        animate();
+    </script>
+</body>
+</html>
