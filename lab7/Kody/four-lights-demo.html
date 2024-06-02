@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Four Lights</title>
+<link rel="stylesheet" href="../demo.css">
+<script src="../script/demo-core.js"></script>
+<script src="../script/glsim.js"></script>
+<script>
+var camera;
+
+var animate;       // checkbox that controls animation
+var drawBase;      // checkbox for turning display of base on and off
+var ambientLight;  // checkbox for turning global ambient light on and off
+var viewpointLight, whitelight;  // checkboxes for turning lights on and off
+
+var animating = false;  // tells whether the animation is running
+var frameNumber = 0;  // frame number for use in animation
+
+//------------------- Drawing functions ----------------------------------------
+
+function uvSphere(radius, slices, stacks) {
+    var i,j;
+    for (j = 0; j < stacks; j++) {
+        var latitude1 = (Math.PI/stacks) * j - Math.PI/2;
+        var latitude2 = (Math.PI/stacks) * (j+1) - Math.PI/2;
+        var sinLat1 = Math.sin(latitude1);
+        var cosLat1 = Math.cos(latitude1);
+        var sinLat2 = Math.sin(latitude2);
+        var cosLat2 = Math.cos(latitude2);
+        glBegin(GL_TRIANGLE_STRIP);
+        for (i = 0; i <= slices; i++) {
+            var longitude = (2*Math.PI/slices) * i;
+            var sinLong = Math.sin(longitude);
+            var cosLong = Math.cos(longitude);
+            var x1 = cosLong * cosLat1;
+            var y1 = sinLong * cosLat1;
+            var z1 = sinLat1;
+            var x2 = cosLong * cosLat2;
+            var y2 = sinLong * cosLat2;
+            var z2 = sinLat2;
+            glNormal3d(x2,y2,z2);
+	    glVertex3d(radius*x2,radius*y2,radius*z2);
+	    glNormal3d(x1,y1,z1);
+            glVertex3d(radius*x1,radius*y1,radius*z1);
+        }
+        glEnd();
+    }
+}
+
+function lights() {
+
+    glColor3d(1,1,1);
+    var zero = [ 0, 0, 0, 1 ];
+    glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, zero);
+    
+    if (viewpointLight.checked)
+        glEnable(GL_LIGHT0);
+    else
+        glDisable(GL_LIGHT0);
+    
+    if (whitelight.checked) {
+        glMaterialfv(GL_FRONT_AND_BACK, GL_EMISSION, [1, 1, 1, 1]);  
+        glEnable(GL_LIGHT1);
+    }
+    else {
+        glMaterialfv(GL_FRONT_AND_BACK, GL_EMISSION, zero);  
+        glDisable(GL_LIGHT1);
+    }
+    glPushMatrix();
+    glRotated(-frameNumber, 0, 1, 0);
+    glTranslated(10, 7, 0);
+    glLightfv(GL_LIGHT1, GL_POSITION, zero);
+    uvSphere(0.5, 16, 8);
+    glPopMatrix();
+    
+
+    glMaterialfv(GL_FRONT_AND_BACK, GL_EMISSION, zero); // Turn off emission color!
+}
+
+function drawCylinder() {
+    var i;
+    glBegin(GL_TRIANGLE_STRIP);
+    for (i = 0; i <= 64; i++) {
+        var angle = 2*Math.PI/64 * i;
+        var x = Math.cos(angle);
+        var y = Math.sin(angle);
+        glNormal3d( x, y, 0 );
+        glVertex3d( x, y, 1 );
+        glVertex3d( x, y, -1 );
+    }
+    glEnd();
+    glNormal3d( 0, 0, 1 );
+    glBegin(GL_TRIANGLE_FAN);
+    glColor3d(1,1,1);
+    glVertex3d( 0, 0, 1);
+    for (i = 0; i <= 64; i++) {
+        var angle = 2*Math.PI/64 * i;
+        var x = Math.cos(angle);
+        var y = Math.sin(angle);
+        glVertex3d( x, y, 1 );
+    }
+    glEnd();
+    glNormal3f( 0, 0, -1 );  
+    glBegin(GL_TRIANGLE_FAN);
+    glColor3d(1,1,1);
+    glVertex3d( 0, 0, -1);
+    for (i = 64; i >= 0; i--) {
+        var angle = 2*Math.PI/64 * i;
+        var x = Math.cos(angle);
+        var y = Math.sin(angle);
+        glVertex3d( x, y, -1 );
+    }
+    glEnd();    
+}
+
+function Piramida(){
+    var sides = 12;
+    var height = 1.5;
+    // Set material properties: red color
+    var materialProperties = [
+        0.6, 0.0, 0.0, 1.0,  // ambient
+        0.6, 0.0, 0.0, 1.0,  // diffuse
+        1.0, 0.5, 0.5, 1.0,  // specular
+        16                    // shininess
+    ];
+
+    glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, materialProperties.slice(0, 4));
+    glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, materialProperties.slice(4, 8));
+    glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, materialProperties.slice(8, 12));
+    glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS, materialProperties[12]);
+
+    // Draw base of the pyramid
+    glBegin(GL_POLYGON);
+    glNormal3d(0, 0, -1);
+    for (var i = 0; i < sides; i++) {
+        var angle = (2 * Math.PI / sides) * i;
+        var x = Math.cos(angle);
+        var y = Math.sin(angle);
+        glVertex3d(x, y, 0);
+    }
+    glEnd();
+
+    // Draw sides of the pyramid
+    glBegin(GL_TRIANGLES);
+    for (var i = 0; i < sides; i++) {
+        var angle1 = (2 * Math.PI / sides) * i;
+        var angle2 = (2 * Math.PI / sides) * (i + 1);
+        var x1 = Math.cos(angle1);
+        var y1 = Math.sin(angle1);
+        var x2 = Math.cos(angle2);
+        var y2 = Math.sin(angle2);
+        var nx = (x1 + x2) / 2;
+        var ny = (y1 + y2) / 2;
+        glNormal3d(nx, ny, height / 2);
+        glVertex3d(0, 0, height);
+        glVertex3d(x1, y1, 0);
+        glVertex3d(x2, y2, 0);
+    }
+    glEnd();
+}
+
+function display() {
+
+    glClearColor(0,0,0,1);
+    glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT ); 
+
+    camera.apply();
+
+    lights();
+
+    if (ambientLight.checked) {
+        glLightModelfv(GL_LIGHT_MODEL_AMBIENT, [0.15, 0.15, 0.15, 1] );
+    }
+    else {
+        glLightModelfv(GL_LIGHT_MODEL_AMBIENT, [0, 0, 0, 1] );
+    }
+
+    if (drawBase.checked) {
+        glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, [0, 0, 0, 1] );
+
+        glPushMatrix();
+        glTranslated(0, -0.4, 0);
+        glRotated(-90, 1, 0, 0);
+        glScaled(10,10,0.5);
+        drawCylinder();
+        glPopMatrix();
+    }
+
+    glColor3d(0.7,0.7,0.7);  // sets diffuse and ambient color for teapot
+
+    glPushMatrix();
+    glScalef(7,7,7);
+    glRotated(-90, 1, 0, 0);
+    Piramida();
+    glPopMatrix();
+}
+
+function initGL() {
+    glClearColor(0, 0, 0, 1);  
+    glEnable(GL_DEPTH_TEST); 
+    glEnable(GL_LIGHTING);
+    glEnable(GL_LIGHT0);
+    glEnable(GL_NORMALIZE);
+    glEnable(GL_COLOR_MATERIAL);
+    glLightModeli(GL_LIGHT_MODEL_LOCAL_VIEWER, 1);
+    glMateriali(GL_FRONT_AND_BACK, GL_SHININESS, 32);
+
+    var dim = [ 0.5, 0.5, 0.5, 1 ];
+    glLightfv(GL_LIGHT0, GL_DIFFUSE, dim);
+    glLightfv(GL_LIGHT0, GL_SPECULAR, dim);
+
+    var red =  [ 1, 1, 1, 1];
+    var reda = [ 0.01, 0, 0, 1];
+    glLightfv(GL_LIGHT1, GL_AMBIENT, reda);
+    glLightfv(GL_LIGHT1, GL_DIFFUSE, red);
+    glLightfv(GL_LIGHT1, GL_SPECULAR, red);
+}
+
+function doFrame() {
+    if (animating) {
+	frameNumber++;
+	display();
+	setTimeout(doFrame, 30);
+    }
+}
+
+function init() {
+    try {
+        glsimUse("maincanvas");
+    }
+    catch (e) {
+        document.getElementById("canvas-holder").innerHTML="<p><b>Sorry, an error occurred:<br>" +
+                e + "</b></p>";
+	return;
+    }
+    animate = document.getElementById("animate");
+    drawBase = document.getElementById("drawBase");
+    ambientLight = document.getElementById("ambientLight");
+    viewpointLight = document.getElementById("viewpointLight");
+    whitelight = document.getElementById("whitelight");
+    animate.checked = false;
+    drawBase.checked = true;
+    ambientLight.checked = true;
+    viewpointLight.checked = false;
+    whitelight.checked = true;
+    drawBase.onchange = display;
+    ambientLight.onchange = display;
+    viewpointLight.onchange = display;
+    whitelight.onchange = display;
+    animate.onchange = function() {
+	if (animate.checked) {
+	    animating = true;
+	    doFrame();
+	}
+	else {
+	    animating = false;
+	}
+    }
+    initGL();
+    camera = new Camera();
+    camera.lookAt(5,10,30, 0,0,0, 0,1,0);
+    camera.setScale(15);
+    camera.installTrackball(display);
+    display();
+}
+
+</script>
+</head>
+<body onload="init()">
+
+<div id="content">
+
+<h3 id="headline">Four Lights Demo</h3>
+
+<div id="canvas-holder">
+<canvas id="maincanvas" width="400" height="400"></canvas>
+</div>
+
+<div id="tools">
+<p>
+<label><input type="checkbox" id="animate">Animate</label><br><br>
+<label><input type="checkbox" id="drawBase">DrawBase</label><br><br>
+<label><input type="checkbox" id="ambientLight">Global Ambient</label><br><br>
+<label><input type="checkbox" id="viewpointLight">Viewpoint Light</label><br>
+<label><input type="checkbox" id="whitelight">White Light</label><br>
+
+
+</p>
+</div>
+
+</div>
+
+
+
+<div id="help-content" style="display:none">
+<h3>About this demo...</h3>
+<p>The demo shows a scene that is illuminated by four light sources, as well
+as by a dim global ambient light.  There is a "viewpoint" light, which is a
+white light shining into the scene from the direction of the viewer.
+There are three colored positional lights, with a small sphere at the
+position of each light.  The checkboxes allow you to turn the
+lights off and on.  You can control whether the base is displayed.
+You can turn on an animation that makes the colored lights fly
+in circles around the teapot.  And you can rotate the scene as a whole
+using your mouse.</p>
+<p>Some things to do:  Turn off all of the lights except one, and note
+the effect of that light on the teapot.  (Maybe turn off the base so it
+doesn't distract you.) For the colored lights, be sure to use animation
+so that you can see how the colors on the teapot change.  Try it
+with only two colored lights turned on, and see how their colors combine.
+Note that when one a colored light is turned on, it adds some of its
+color to the ambient light; to see the effect look at the bottom
+of the teapot, with just one light turned on (and display of the base turned off).</p>
+<p>Note that when the only light source is a single colored light, part of the base is black;
+this is because, for example, a part of a surface that contains no red will
+not reflect any red light.</p>
+<p>You might also note that the teapot does not cast shadoes on the base.  OpenGL
+does not support shadows, except with a lot of extra work.</p>
+<p>The base has a material that changes colors around the edge of the cylinder.
+This is meant as a demonstration of using different material colors at different
+vertices of the same primitive. It also uses <i>GL_COLOR_MATERIAL</i> so that
+the material colors can be set by calling <i>glColor3fv</i> instead of
+<i>glMaterialfv</i>.</p>
+</div>
+
+<div id="help-icon">
+<img src="../image/question32.png" onclick="showDemoHelp()"
+    title="Click here for information about this demo." width="32" height="32">
+</div>
+<div id="hide-help-icon">
+<img src="../image/close32.png" onclick="showDemoHelp()"
+    title="Click here to return to the demo." width="65" height="32">
+</div>
+<div id="helpBG" style="display:none"></div>
+</body>
+</html>
